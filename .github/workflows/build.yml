@@ -1,0 +1,55 @@
+
+name: Build Space Flight 100
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip \
+            python3-pip python3-venv \
+            autoconf automake libtool libltdl-dev \
+            pkg-config zlib1g-dev \
+            libncurses5-dev libffi-dev libssl-dev \
+            cmake
+
+      - name: Prepare Python
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+          pip install buildozer cython==0.29.36
+
+      - name: Build APK
+        run: |
+          . .venv/bin/activate
+          buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Space-Flight-100-APK
+          path: bin/*.apk
+          if-no-files-found: error
